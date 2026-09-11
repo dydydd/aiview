@@ -225,6 +225,34 @@
       font-size: 12px;
     }
 
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rounding-owner {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 8px 7px 11px;
+      border: 1px solid rgba(85, 214, 255, .35);
+      border-radius: 9px;
+      color: var(--cyan);
+      background: rgba(85, 214, 255, .07);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .rounding-owner select {
+      padding: 3px 22px 3px 6px;
+      border: 0;
+      outline: none;
+      color: var(--text);
+      background: #0b111b;
+      font-weight: 750;
+    }
+
     .action-button {
       flex: none;
       padding: 10px 14px;
@@ -338,6 +366,22 @@
     th:first-child, td:first-child { width: 190px; text-align: left; }
     th:nth-child(2), td:nth-child(2) { width: 170px; }
     th:last-child, td:last-child { width: 135px; }
+
+    th.rounding-column {
+      color: var(--amber);
+      background: rgba(255, 181, 46, .07);
+    }
+
+    th.rounding-column::after {
+      display: block;
+      margin-top: 4px;
+      color: var(--amber);
+      content: "本月零头归属";
+      font-size: 8px;
+      letter-spacing: .02em;
+    }
+
+    td.rounding-column { background: rgba(255, 181, 46, .025); }
 
     tbody tr { transition: background .15s ease; }
     tbody tr:hover { background: rgba(85, 214, 255, .025); }
@@ -620,6 +664,8 @@
       .app { width: min(100% - 20px, 1380px); padding-top: 24px; }
       .declaration, .settlement, .notes-panel, .reconciliation { padding: 19px; }
       .toolbar { align-items: flex-start; flex-direction: column; }
+      .toolbar-actions { width: 100%; align-items: stretch; flex-direction: column; }
+      .rounding-owner { justify-content: space-between; }
       .settlement-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -637,7 +683,7 @@
 
     <!-- Machine-readable default declaration required by the page contract. -->
     <div hidden aria-hidden="true">
-      <span data-testid="declare" data-axis="tie" data-choice="largest-rem"></span>
+      <span data-testid="declare" data-axis="tie" data-choice="first"></span>
       <span data-testid="declare" data-axis="monthly" data-choice="equal"></span>
       <span data-testid="declare" data-axis="degenerate" data-choice="equal"></span>
     </div>
@@ -648,7 +694,16 @@
           <h2 id="ledger-title">本月明细</h2>
           <p>本月按 30 天计 · 金额单位：元 · 可输入负数表示退款或冲抵</p>
         </div>
-        <button class="action-button" id="add-bill" type="button">＋ 新增账单</button>
+        <div class="toolbar-actions">
+          <label class="rounding-owner">本月零头归属
+            <select data-testid="rounding-owner" id="rounding-owner" aria-label="本月零头归属">
+              <option value="lin" selected>小林</option>
+              <option value="zhe">阿哲</option>
+              <option value="zhou">小周</option>
+            </select>
+          </label>
+          <button class="action-button" id="add-bill" type="button">＋ 新增账单</button>
+        </div>
       </div>
 
       <div class="people-strip" id="people-strip"></div>
@@ -659,9 +714,9 @@
             <tr>
               <th scope="col">账单</th>
               <th scope="col">金额 / 规则</th>
-              <th scope="col">小林</th>
-              <th scope="col">阿哲</th>
-              <th scope="col">小周</th>
+              <th scope="col" data-person-header="lin">小林</th>
+              <th scope="col" data-person-header="zhe">阿哲</th>
+              <th scope="col" data-person-header="zhou">小周</th>
               <th scope="col">账单合计</th>
             </tr>
           </thead>
@@ -684,8 +739,8 @@
       <div class="panel reconciliation">
         <div class="reconcile-head">
           <div>
-            <h2 class="summary-title">RECONCILIATION // 本月多退少补</h2>
-            <p class="reconcile-copy">本月已收款沿用上次结算结果并永久冻结；新应付减去已收，正数为少补，负数为多退。</p>
+            <h2 class="summary-title">RECONCILIATION // 本月账面差额</h2>
+            <p class="reconcile-copy">本月已收款永久冻结，不实际补收或退款；新应付减去已收，正数表示账面少收，负数表示账面多收。</p>
           </div>
           <span class="frozen-badge">已收款快照 · 不参与重算</span>
         </div>
@@ -698,8 +753,8 @@
       </div>
       <div class="panel notes-panel">
         <h2 class="summary-title">NOTES // 三句话取舍</h2>
-        <p class="notes" data-testid="notes">电费和水费按在住天数分，包年宽带与按户垃圾清运费均按三人平摊，已收款则冻结为上次结算快照。所有金额先化为整数分再用最大余数法分配，同余数时按小林、阿哲、小周的固定顺序，确保逐笔、总账和多退少补一分不差。人员、账单、规则与已收快照分层管理，金额、天数、逐笔规则可改且能新增账单，不必重做页面。</p>
-        <p class="footnote">计算核心公开为 window.__split(totalCents, weights, options)，异常或非正权重按 0 处理；若全部权重为 0，则按申报规则均分。</p>
+        <p class="notes" data-testid="notes">电费和水费按在住天数分，包年宽带与按户垃圾清运费按三人平摊，本月每笔分不尽的零头统一由页面标明的一人承担。所有金额先化为整数分，每笔基础份额取整后把剩余分全部记到当月零头归属人，已收款冻结且差额只记账、不实际收退。人员、账单、规则、零头归属与已收快照分层管理，金额、天数和归属人都可改，不必重做页面。</p>
+        <p class="footnote">计算核心公开为 window.__split(totalCents, weights, options)，默认把全部剩余分记到下标 0；页面通过 options.remainderIndex 指定当月归属人。</p>
       </div>
     </section>
   </main>
@@ -725,9 +780,9 @@
       const paidSnapshot = [12496, 18406, 18403];
 
       /**
-       * Deterministic largest-remainder apportionment.
-       * Rest semantics: the first rest value may be an object with
-       * `degenerate: "hold"`; every other value safely uses equal fallback.
+       * Deterministic apportionment with one designated remainder owner.
+       * Rest semantics: the first rest value may define `remainderIndex`,
+       * `tie`, or `degenerate`; unknown values safely use person index 0.
        */
       window.__split = function split(totalCents, weights, ...rest) {
         const source = Array.isArray(weights) ? weights : [];
@@ -772,30 +827,43 @@
           .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
           .sort((a, b) => (b.fraction - a.fraction) || (a.index - b.index));
 
-        // In normal arithmetic delta is in [0, count). The quotient path also
-        // makes correction bounded and deterministic under floating-point edge cases.
-        if (delta > 0) {
-          const each = Math.floor(delta / count);
-          if (each > 0) {
-            for (let i = 0; i < count; i += 1) shares[i] += each;
-            delta -= each * count;
+        let remainderIndex = 0;
+        if (option && typeof option === "object") {
+          if (Number.isInteger(option.remainderIndex) && option.remainderIndex >= 0 && option.remainderIndex < count) {
+            remainderIndex = option.remainderIndex;
+          } else if (option.tie === "last") {
+            remainderIndex = count - 1;
+          } else if (option.tie === "most") {
+            remainderIndex = clean.reduce((best, value, index) => value > clean[best] ? index : best, 0);
+          } else if (option.tie === "least") {
+            const eligible = clean.map((value, index) => ({ value, index })).filter(item => item.value > 0);
+            remainderIndex = eligible.reduce((best, item) => item.value < best.value ? item : best).index;
           }
-          for (let i = 0; i < delta; i += 1) {
-            shares[descendingRemainder[i % count].index] += 1;
+        }
+
+        // The default and declared behavior puts every residual cent on one
+        // named person. Explicit largest-rem/spread remains available to callers.
+        if (delta > 0) {
+          if (option && typeof option === "object" && (option.tie === "largest-rem" || option.tie === "spread")) {
+            const each = Math.floor(delta / count);
+            if (each > 0) {
+              for (let i = 0; i < count; i += 1) shares[i] += each;
+              delta -= each * count;
+            }
+            for (let i = 0; i < delta; i += 1) {
+              shares[descendingRemainder[i % count].index] += 1;
+            }
+          } else {
+            shares[remainderIndex] += delta;
           }
         } else if (delta < 0) {
           let excess = -delta;
-          const ascendingRemainder = descendingRemainder.slice().reverse();
-          let cursor = 0;
-          while (excess > 0) {
-            const target = ascendingRemainder[cursor % count].index;
-            if (shares[target] > 0) {
-              const rounds = Math.max(1, Math.floor(excess / count));
-              const take = Math.min(shares[target], rounds);
-              shares[target] -= take;
-              excess -= take;
-            }
-            cursor += 1;
+          const correctionOrder = [remainderIndex, ...shares.map((_, index) => index).filter(index => index !== remainderIndex)];
+          for (const target of correctionOrder) {
+            const take = Math.min(shares[target], excess);
+            shares[target] -= take;
+            excess -= take;
+            if (excess === 0) break;
           }
         }
 
@@ -806,6 +874,7 @@
       const billRows = document.getElementById("bill-rows");
       const settlementGrid = document.getElementById("settlement-grid");
       const reconcileGrid = document.getElementById("reconcile-grid");
+      const roundingOwner = document.getElementById("rounding-owner");
       let customCounter = 0;
 
       function escapeText(value) {
@@ -869,7 +938,7 @@
           <article class="reconcile-card">
             <div class="reconcile-name">
               <span>${escapeText(person.name)}</span>
-              <em class="reconcile-status" id="reconcile-status-${person.id}">无需多退少补</em>
+              <em class="reconcile-status" id="reconcile-status-${person.id}">账面无差额</em>
             </div>
             <div class="reconcile-values">
               <div class="reconcile-value">
@@ -947,17 +1016,28 @@
         const equal = people.map(() => 1);
         const perPerson = people.map(() => 0);
         let directGrandTotal = 0;
+        const selectedOwner = people.findIndex(person => person.id === roundingOwner.value);
+        const remainderIndex = selectedOwner >= 0 ? selectedOwner : 0;
+
+        document.querySelectorAll(".rounding-column").forEach(element => element.classList.remove("rounding-column"));
+        const ownerHeader = document.querySelector(`[data-person-header="${people[remainderIndex].id}"]`);
+        if (ownerHeader) ownerHeader.classList.add("rounding-column");
 
         for (const bill of bills) {
           const amountInput = document.querySelector(`[data-testid="amount-input"][data-bill="${bill.id}"]`);
           const ruleInput = document.querySelector(`[data-rule-bill="${bill.id}"]`);
           const totalCents = amountToCents(amountInput ? amountInput.value : 0);
-          const shares = window.__split(totalCents, ruleInput && ruleInput.value === "days" ? days : equal);
+          const shares = window.__split(
+            totalCents,
+            ruleInput && ruleInput.value === "days" ? days : equal,
+            { remainderIndex }
+          );
 
           shares.forEach((share, index) => {
             perPerson[index] += share;
             const cell = document.querySelector(`[data-testid="cell"][data-bill="${bill.id}"][data-person="${people[index].id}"]`);
             setCents(cell, share);
+            if (index === remainderIndex) cell.closest("td").classList.add("rounding-column");
           });
 
           // Every data-cents value, including a displayed total, passes through
@@ -973,12 +1053,13 @@
           const adjustment = window.__split(checkedPersonTotal - checkedPaid, [1])[0];
           const totalElement = document.querySelector(`[data-testid="person-total"][data-person="${people[index].id}"]`);
           setCents(totalElement, checkedPersonTotal);
+          if (index === remainderIndex) totalElement.closest("td").classList.add("rounding-column");
           document.getElementById(`settlement-${people[index].id}`).textContent = formatMoney(checkedPersonTotal);
           setCents(document.querySelector(`[data-testid="paid-amount"][data-person="${people[index].id}"]`), checkedPaid);
           setCents(document.querySelector(`[data-testid="reconciled-due"][data-person="${people[index].id}"]`), checkedPersonTotal);
           setCents(document.querySelector(`[data-testid="adjustment"][data-person="${people[index].id}"]`), adjustment);
           const status = document.getElementById(`reconcile-status-${people[index].id}`);
-          status.textContent = adjustment > 0 ? "少补" : adjustment < 0 ? "多退" : "无需多退少补";
+          status.textContent = adjustment > 0 ? "账面少收" : adjustment < 0 ? "账面多收" : "账面无差额";
           status.style.color = adjustment < 0 ? "var(--cyan)" : "var(--lime)";
         });
 
@@ -1006,6 +1087,7 @@
 
       billRows.addEventListener("input", handleBillChange);
       billRows.addEventListener("change", handleBillChange);
+      roundingOwner.addEventListener("change", calculate);
       billRows.addEventListener("click", event => {
         const button = event.target.closest("[data-remove-bill]");
         if (!button) return;
