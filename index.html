@@ -351,6 +351,18 @@
       font-weight: 680;
     }
 
+    .bill-label { min-width: 0; }
+
+    .bill-label small {
+      display: block;
+      margin-top: 3px;
+      color: #778197;
+      font-family: ui-monospace, monospace;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: .04em;
+    }
+
     .bill-icon {
       display: grid;
       width: 31px;
@@ -427,7 +439,100 @@
       margin-top: 22px;
     }
 
-    .settlement, .notes-panel { padding: 24px; }
+    .settlement, .notes-panel, .reconciliation { padding: 24px; }
+
+    .reconciliation { grid-column: 1 / -1; }
+
+    .reconcile-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .reconcile-head .summary-title { margin-bottom: 7px; }
+
+    .reconcile-copy {
+      margin: 0;
+      color: var(--muted);
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .frozen-badge {
+      flex: none;
+      padding: 7px 10px;
+      border: 1px solid rgba(85, 214, 255, .35);
+      border-radius: 8px;
+      color: var(--cyan);
+      background: rgba(85, 214, 255, .07);
+      font-size: 10px;
+      letter-spacing: .08em;
+    }
+
+    .reconcile-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .reconcile-card {
+      padding: 15px;
+      border: 1px solid #2b3447;
+      border-radius: 13px;
+      background: #0b0f18;
+    }
+
+    .reconcile-name {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 13px;
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .reconcile-status {
+      color: var(--lime);
+      font-family: ui-monospace, monospace;
+      font-size: 10px;
+      font-style: normal;
+      font-weight: 500;
+    }
+
+    .reconcile-values {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .reconcile-value {
+      min-width: 0;
+      padding-top: 9px;
+      border-top: 1px solid #242c3c;
+    }
+
+    .reconcile-value small {
+      display: block;
+      margin-bottom: 5px;
+      color: #707b90;
+      font-size: 9px;
+    }
+
+    .reconcile-value strong {
+      display: block;
+      overflow: hidden;
+      color: #e9edf5;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      text-overflow: ellipsis;
+    }
+
+    .reconcile-value:last-child strong { color: var(--lime); }
 
     .summary-title {
       margin: 0 0 18px;
@@ -504,7 +609,7 @@
     }
 
     @media (max-width: 900px) {
-      .declare-grid, .people-strip, .summary { grid-template-columns: 1fr; }
+      .declare-grid, .people-strip, .summary, .reconcile-grid { grid-template-columns: 1fr; }
       .people-strip { gap: 9px; }
       .topbar { flex-direction: column; }
       .date-stamp { text-align: left; }
@@ -513,7 +618,7 @@
 
     @media (max-width: 560px) {
       .app { width: min(100% - 20px, 1380px); padding-top: 24px; }
-      .declaration, .settlement, .notes-panel { padding: 19px; }
+      .declaration, .settlement, .notes-panel, .reconciliation { padding: 19px; }
       .toolbar { align-items: flex-start; flex-direction: column; }
       .settlement-grid { grid-template-columns: 1fr; }
     }
@@ -530,24 +635,12 @@
       <div class="date-stamp">CALCULATED AT<strong data-testid="generated-at">0000-00-00</strong></div>
     </header>
 
-    <section class="panel declaration" aria-labelledby="declare-title" hidden>
-      <h2 class="section-title" id="declare-title">DECLARE // 规则申报 <span class="lock-badge">✓ 已锁定</span></h2>
-      <p class="declaration-copy">以下是页面首次加载时的默认行为；申报只做记录，逐笔规则仍可按下个月的实际情况调整。</p>
-      <div class="declare-grid">
-        <div class="declare-item" data-testid="declare" data-axis="tie" data-choice="largest-rem">
-          <small>并列 · tie · 分不尽的零头</small>
-          <strong>largest-rem · 最大余数法</strong>
-        </div>
-        <div class="declare-item" data-testid="declare" data-axis="monthly" data-choice="equal">
-          <small>月供 · monthly · 宽带 / 垃圾</small>
-          <strong>equal · 三人均分</strong>
-        </div>
-        <div class="declare-item" data-testid="declare" data-axis="degenerate" data-choice="equal">
-          <small>退化 · degenerate · 权重全为 0</small>
-          <strong>equal · 自动均分</strong>
-        </div>
-      </div>
-    </section>
+    <!-- Machine-readable default declaration required by the page contract. -->
+    <div hidden aria-hidden="true">
+      <span data-testid="declare" data-axis="tie" data-choice="largest-rem"></span>
+      <span data-testid="declare" data-axis="monthly" data-choice="equal"></span>
+      <span data-testid="declare" data-axis="degenerate" data-choice="equal"></span>
+    </div>
 
     <section class="panel workspace" aria-labelledby="ledger-title">
       <div class="toolbar">
@@ -588,14 +681,24 @@
     </section>
 
     <section class="summary">
+      <div class="panel reconciliation">
+        <div class="reconcile-head">
+          <div>
+            <h2 class="summary-title">RECONCILIATION // 本月多退少补</h2>
+            <p class="reconcile-copy">本月已收款沿用上次结算结果并永久冻结；新应付减去已收，正数为少补，负数为多退。</p>
+          </div>
+          <span class="frozen-badge">已收款快照 · 不参与重算</span>
+        </div>
+        <div class="reconcile-grid" id="reconcile-grid"></div>
+      </div>
       <div class="panel settlement">
         <h2 class="summary-title">SETTLEMENT // 各自应付</h2>
         <div class="settlement-grid" id="settlement-grid"></div>
-        <div class="grand-line"><span>四笔账单总计</span><strong data-testid="grand-total" data-cents="0">¥0.00</strong></div>
+        <div class="grand-line"><span>账单总计</span><strong data-testid="grand-total" data-cents="0">¥0.00</strong></div>
       </div>
       <div class="panel notes-panel">
         <h2 class="summary-title">NOTES // 三句话取舍</h2>
-        <p class="notes" data-testid="notes">电费和水费按在住天数分，宽带费和垃圾清运费按人头均分，以同时回应小林与阿哲的分歧。所有金额先化为整数分再用最大余数法分配，同余数时按小林、阿哲、小周的固定顺序，确保逐笔与总账一分不差。人员、账单和规则由数据驱动，金额、天数、逐笔规则可改且能新增账单，不必重做页面。</p>
+        <p class="notes" data-testid="notes">电费和水费按在住天数分，包年宽带与按户垃圾清运费均按三人平摊，已收款则冻结为上次结算快照。所有金额先化为整数分再用最大余数法分配，同余数时按小林、阿哲、小周的固定顺序，确保逐笔、总账和多退少补一分不差。人员、账单、规则与已收快照分层管理，金额、天数、逐笔规则可改且能新增账单，不必重做页面。</p>
         <p class="footnote">计算核心公开为 window.__split(totalCents, weights, options)，异常或非正权重按 0 处理；若全部权重为 0，则按申报规则均分。</p>
       </div>
     </section>
@@ -612,11 +715,14 @@
       ];
 
       const bills = [
-        { id: "electric", name: "电费", amount: "287.65", rule: "days", icon: "⚡", fixed: true },
-        { id: "water", name: "水费", amount: "96.40", rule: "days", icon: "◉", fixed: true },
-        { id: "internet", name: "宽带费", amount: "89.00", rule: "equal", icon: "⌁", fixed: true },
-        { id: "trash", name: "垃圾清运费", amount: "20.00", rule: "equal", icon: "▱", fixed: true }
+        { id: "electric", name: "电费", amount: "287.65", rule: "days", icon: "⚡", fixed: true, detail: "随在住天数分摊" },
+        { id: "water", name: "水费", amount: "96.40", rule: "days", icon: "◉", fixed: true, detail: "随在住天数分摊" },
+        { id: "internet", name: "宽带费", amount: "89.00", rule: "equal", icon: "⌁", fixed: true, detail: "包年套餐 · 不因退租退款", equalLabel: "按户平摊（每人均分）" },
+        { id: "trash", name: "垃圾清运费", amount: "20.00", rule: "equal", icon: "▱", fixed: true, detail: "物业按户收取", equalLabel: "按户平摊（每人均分）" }
       ];
+
+      // Immutable snapshot of what was collected before the rule clarification.
+      const paidSnapshot = [12496, 18406, 18403];
 
       /**
        * Deterministic largest-remainder apportionment.
@@ -699,6 +805,7 @@
       const peopleStrip = document.getElementById("people-strip");
       const billRows = document.getElementById("bill-rows");
       const settlementGrid = document.getElementById("settlement-grid");
+      const reconcileGrid = document.getElementById("reconcile-grid");
       let customCounter = 0;
 
       function escapeText(value) {
@@ -758,6 +865,29 @@
           </div>
         `).join("");
 
+        reconcileGrid.innerHTML = people.map(person => `
+          <article class="reconcile-card">
+            <div class="reconcile-name">
+              <span>${escapeText(person.name)}</span>
+              <em class="reconcile-status" id="reconcile-status-${person.id}">无需多退少补</em>
+            </div>
+            <div class="reconcile-values">
+              <div class="reconcile-value">
+                <small>已收 · 冻结</small>
+                <strong data-testid="paid-amount" data-person="${person.id}" data-cents="0">¥0.00</strong>
+              </div>
+              <div class="reconcile-value">
+                <small>新应付</small>
+                <strong data-testid="reconciled-due" data-person="${person.id}" data-cents="0">¥0.00</strong>
+              </div>
+              <div class="reconcile-value">
+                <small>差额</small>
+                <strong data-testid="adjustment" data-person="${person.id}" data-cents="0">¥0.00</strong>
+              </div>
+            </div>
+          </article>
+        `).join("");
+
         peopleStrip.addEventListener("input", event => {
           if (event.target.matches('[data-testid="days-input"]')) calculate();
         });
@@ -769,7 +899,7 @@
             <td>
               <div class="bill-name">
                 <span class="bill-icon" aria-hidden="true">${escapeText(bill.icon)}</span>
-                <span>${escapeText(bill.name)}</span>
+                <span class="bill-label">${escapeText(bill.name)}${bill.detail ? `<small>${escapeText(bill.detail)}</small>` : ""}</span>
                 ${bill.fixed ? "" : `<button class="remove-button" type="button" data-remove-bill="${bill.id}" aria-label="删除${escapeText(bill.name)}">×</button>`}
               </div>
             </td>
@@ -781,7 +911,7 @@
               </div>
               <select class="rule-select" data-rule-bill="${bill.id}" aria-label="${escapeText(bill.name)}分摊规则">
                 <option value="days" ${bill.rule === "days" ? "selected" : ""}>按在住天数</option>
-                <option value="equal" ${bill.rule === "equal" ? "selected" : ""}>三人均分</option>
+                <option value="equal" ${bill.rule === "equal" ? "selected" : ""}>${escapeText(bill.equalLabel || "三人均分")}</option>
               </select>
             </td>
             ${people.map(person => `<td><span class="money" data-testid="cell" data-bill="${bill.id}" data-person="${person.id}" data-cents="0">¥0.00</span></td>`).join("")}
@@ -839,9 +969,17 @@
 
         perPerson.forEach((sum, index) => {
           const checkedPersonTotal = window.__split(sum, [1])[0];
+          const checkedPaid = window.__split(paidSnapshot[index], [1])[0];
+          const adjustment = window.__split(checkedPersonTotal - checkedPaid, [1])[0];
           const totalElement = document.querySelector(`[data-testid="person-total"][data-person="${people[index].id}"]`);
           setCents(totalElement, checkedPersonTotal);
           document.getElementById(`settlement-${people[index].id}`).textContent = formatMoney(checkedPersonTotal);
+          setCents(document.querySelector(`[data-testid="paid-amount"][data-person="${people[index].id}"]`), checkedPaid);
+          setCents(document.querySelector(`[data-testid="reconciled-due"][data-person="${people[index].id}"]`), checkedPersonTotal);
+          setCents(document.querySelector(`[data-testid="adjustment"][data-person="${people[index].id}"]`), adjustment);
+          const status = document.getElementById(`reconcile-status-${people[index].id}`);
+          status.textContent = adjustment > 0 ? "少补" : adjustment < 0 ? "多退" : "无需多退少补";
+          status.style.color = adjustment < 0 ? "var(--cyan)" : "var(--lime)";
         });
 
         const grandTotal = window.__split(directGrandTotal, [1])[0];
@@ -857,7 +995,8 @@
           amount: "0.00",
           rule: "equal",
           icon: "+",
-          fixed: false
+          fixed: false,
+          detail: "自定义账单"
         });
         renderBills();
         calculate();
