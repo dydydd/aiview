@@ -1,0 +1,888 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>合租公摊账单</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07090f;
+      --panel: rgba(16, 20, 31, .92);
+      --panel-2: #0d111c;
+      --line: #252b3a;
+      --muted: #8f98ab;
+      --text: #f4f6fb;
+      --amber: #ffb52e;
+      --amber-soft: rgba(255, 181, 46, .12);
+      --cyan: #55d6ff;
+      --lime: #bcf21d;
+      --danger: #ff7272;
+      --shadow: 0 20px 70px rgba(0, 0, 0, .34);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { min-height: 100%; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Noto Sans Mono CJK SC", "Microsoft YaHei", monospace;
+      background-color: var(--bg);
+      background-image:
+        linear-gradient(rgba(113, 126, 157, .075) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(113, 126, 157, .075) 1px, transparent 1px),
+        radial-gradient(circle at 78% 5%, rgba(49, 94, 167, .12), transparent 28%);
+      background-size: 70px 70px, 70px 70px, 100% 100%;
+    }
+
+    button, input, select { font: inherit; }
+
+    button, select, input { color: inherit; }
+
+    .app {
+      width: min(1380px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 42px 0 60px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--amber);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: clamp(30px, 4vw, 52px);
+      line-height: 1;
+      letter-spacing: -.04em;
+    }
+
+    .subtitle {
+      max-width: 740px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .date-stamp {
+      flex: none;
+      padding: 12px 15px;
+      border: 1px solid #384055;
+      border-radius: 10px;
+      background: rgba(8, 11, 18, .72);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: right;
+    }
+
+    .date-stamp strong {
+      display: block;
+      color: var(--text);
+      font-size: 15px;
+      letter-spacing: .06em;
+    }
+
+    .panel {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .panel::before,
+    .panel::after {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      content: "";
+      pointer-events: none;
+    }
+
+    .panel::before {
+      top: 10px;
+      left: 10px;
+      border-top: 1px solid rgba(255, 181, 46, .55);
+      border-left: 1px solid rgba(255, 181, 46, .55);
+    }
+
+    .panel::after {
+      right: 10px;
+      bottom: 10px;
+      border-right: 1px solid rgba(255, 181, 46, .55);
+      border-bottom: 1px solid rgba(255, 181, 46, .55);
+    }
+
+    .declaration {
+      margin-bottom: 22px;
+      padding: 24px 26px 26px;
+      border-color: rgba(255, 181, 46, .38);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0;
+      color: var(--amber);
+      font-size: 14px;
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+
+    .lock-badge {
+      padding: 5px 8px;
+      border: 1px solid rgba(85, 214, 255, .38);
+      border-radius: 7px;
+      color: var(--cyan);
+      background: rgba(85, 214, 255, .07);
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+
+    .declaration-copy {
+      margin: 12px 0 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .declare-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .declare-item {
+      min-width: 0;
+      padding: 13px 14px;
+      border: 1px solid #2d374b;
+      border-radius: 12px;
+      background: #0a0e17;
+    }
+
+    .declare-item small {
+      display: block;
+      margin-bottom: 6px;
+      color: #788398;
+      font-size: 10px;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .declare-item strong {
+      display: block;
+      overflow: hidden;
+      color: #e6ebf4;
+      font-size: 13px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      padding: 0;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .toolbar h2 {
+      margin: 0 0 6px;
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 18px;
+    }
+
+    .toolbar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .action-button {
+      flex: none;
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 181, 46, .5);
+      border-radius: 9px;
+      color: var(--amber);
+      background: var(--amber-soft);
+      cursor: pointer;
+      transition: background .18s ease, transform .18s ease;
+    }
+
+    .action-button:hover { background: rgba(255, 181, 46, .19); }
+    .action-button:active { transform: translateY(1px); }
+
+    .people-strip {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7, 10, 17, .42);
+    }
+
+    .person-input-card {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 13px;
+      border: 1px solid #262e3e;
+      border-radius: 12px;
+      background: var(--panel-2);
+    }
+
+    .avatar {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border: 1px solid #4a5369;
+      border-radius: 50%;
+      color: var(--cyan);
+      background: rgba(85, 214, 255, .08);
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .person-input-card label {
+      min-width: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      font-weight: 650;
+    }
+
+    .person-input-card label small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-family: ui-monospace, monospace;
+      font-size: 10px;
+      font-weight: 400;
+    }
+
+    .days-control {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .days-control input {
+      width: 64px;
+      padding: 8px 7px;
+      border: 1px solid #374158;
+      border-radius: 8px;
+      outline: none;
+      background: #070a11;
+      text-align: right;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--cyan) !important;
+      box-shadow: 0 0 0 3px rgba(85, 214, 255, .1);
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      min-width: 980px;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 16px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: right;
+    }
+
+    th {
+      color: #808a9d;
+      background: rgba(9, 12, 20, .78);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    th:first-child, td:first-child { width: 190px; text-align: left; }
+    th:nth-child(2), td:nth-child(2) { width: 170px; }
+    th:last-child, td:last-child { width: 135px; }
+
+    tbody tr { transition: background .15s ease; }
+    tbody tr:hover { background: rgba(85, 214, 255, .025); }
+
+    .bill-name {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      font-weight: 680;
+    }
+
+    .bill-icon {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      flex: none;
+      place-items: center;
+      border: 1px solid rgba(255, 181, 46, .24);
+      border-radius: 8px;
+      color: var(--amber);
+      background: rgba(255, 181, 46, .08);
+      font-size: 14px;
+    }
+
+    .amount-control {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 7px;
+      color: var(--muted);
+    }
+
+    .amount-control input {
+      width: 110px;
+      padding: 9px 10px;
+      border: 1px solid #354057;
+      border-radius: 8px;
+      outline: none;
+      background: #080b12;
+      text-align: right;
+    }
+
+    .rule-select {
+      width: 100%;
+      padding: 9px 30px 9px 10px;
+      border: 1px solid #354057;
+      border-radius: 8px;
+      outline: none;
+      background: #080b12;
+      font-size: 12px;
+    }
+
+    .money {
+      color: #f8f9fc;
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bill-total { color: var(--amber); font-weight: 800; }
+
+    .remove-button {
+      margin-left: 7px;
+      padding: 2px 5px;
+      border: 0;
+      border-radius: 4px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .remove-button:hover { color: var(--danger); background: rgba(255, 114, 114, .08); }
+
+    tfoot td {
+      padding-top: 19px;
+      padding-bottom: 19px;
+      border-bottom: 0;
+      background: rgba(255, 181, 46, .04);
+      font-weight: 750;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: 1.45fr 1fr;
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .settlement, .notes-panel { padding: 24px; }
+
+    .summary-title {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 11px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .settlement-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .settlement-card {
+      padding: 14px;
+      border: 1px solid #2b3447;
+      border-radius: 12px;
+      background: #0b0f18;
+    }
+
+    .settlement-card span {
+      display: block;
+      margin-bottom: 9px;
+      color: var(--muted);
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 12px;
+    }
+
+    .settlement-card strong {
+      color: var(--lime);
+      font-size: 20px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .grand-line {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 20px;
+      margin-top: 18px;
+      padding-top: 17px;
+      border-top: 1px dashed #394156;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .grand-line strong {
+      color: var(--amber);
+      font-size: 26px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .notes {
+      margin: 0;
+      color: #c5ccda;
+      font-family: system-ui, -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+      line-height: 1.9;
+    }
+
+    .footnote {
+      margin: 18px 0 0;
+      color: #6f798d;
+      font-size: 10px;
+      line-height: 1.7;
+    }
+
+    .empty-hint {
+      padding: 30px !important;
+      color: var(--muted);
+      text-align: center !important;
+    }
+
+    @media (max-width: 900px) {
+      .declare-grid, .people-strip, .summary { grid-template-columns: 1fr; }
+      .people-strip { gap: 9px; }
+      .topbar { flex-direction: column; }
+      .date-stamp { text-align: left; }
+      .settlement-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 560px) {
+      .app { width: min(100% - 20px, 1380px); padding-top: 24px; }
+      .declaration, .settlement, .notes-panel { padding: 19px; }
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .settlement-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" data-testid="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">ROOMMATE LEDGER // 09</p>
+        <h1>合租公摊账单</h1>
+        <p class="subtitle">按账单性质分摊，改完金额或在住天数立即重算。所有结果以整数分计算，不让任何一分钱消失。</p>
+      </div>
+      <div class="date-stamp">CALCULATED AT<strong data-testid="generated-at">0000-00-00</strong></div>
+    </header>
+
+    <section class="panel declaration" aria-labelledby="declare-title" hidden>
+      <h2 class="section-title" id="declare-title">DECLARE // 规则申报 <span class="lock-badge">✓ 已锁定</span></h2>
+      <p class="declaration-copy">以下是页面首次加载时的默认行为；申报只做记录，逐笔规则仍可按下个月的实际情况调整。</p>
+      <div class="declare-grid">
+        <div class="declare-item" data-testid="declare" data-axis="tie" data-choice="largest-rem">
+          <small>并列 · tie · 分不尽的零头</small>
+          <strong>largest-rem · 最大余数法</strong>
+        </div>
+        <div class="declare-item" data-testid="declare" data-axis="monthly" data-choice="equal">
+          <small>月供 · monthly · 宽带 / 垃圾</small>
+          <strong>equal · 三人均分</strong>
+        </div>
+        <div class="declare-item" data-testid="declare" data-axis="degenerate" data-choice="equal">
+          <small>退化 · degenerate · 权重全为 0</small>
+          <strong>equal · 自动均分</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel workspace" aria-labelledby="ledger-title">
+      <div class="toolbar">
+        <div>
+          <h2 id="ledger-title">本月明细</h2>
+          <p>本月按 30 天计 · 金额单位：元 · 可输入负数表示退款或冲抵</p>
+        </div>
+        <button class="action-button" id="add-bill" type="button">＋ 新增账单</button>
+      </div>
+
+      <div class="people-strip" id="people-strip"></div>
+
+      <div class="table-wrap">
+        <table aria-label="公摊账单计算表">
+          <thead>
+            <tr>
+              <th scope="col">账单</th>
+              <th scope="col">金额 / 规则</th>
+              <th scope="col">小林</th>
+              <th scope="col">阿哲</th>
+              <th scope="col">小周</th>
+              <th scope="col">账单合计</th>
+            </tr>
+          </thead>
+          <tbody id="bill-rows"></tbody>
+          <tfoot>
+            <tr>
+              <td>个人合计</td>
+              <td></td>
+              <td><span class="money" data-testid="person-total" data-person="lin" data-cents="0">¥0.00</span></td>
+              <td><span class="money" data-testid="person-total" data-person="zhe" data-cents="0">¥0.00</span></td>
+              <td><span class="money" data-testid="person-total" data-person="zhou" data-cents="0">¥0.00</span></td>
+              <td><span class="money bill-total" id="table-grand-total">¥0.00</span></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section class="summary">
+      <div class="panel settlement">
+        <h2 class="summary-title">SETTLEMENT // 各自应付</h2>
+        <div class="settlement-grid" id="settlement-grid"></div>
+        <div class="grand-line"><span>四笔账单总计</span><strong data-testid="grand-total" data-cents="0">¥0.00</strong></div>
+      </div>
+      <div class="panel notes-panel">
+        <h2 class="summary-title">NOTES // 三句话取舍</h2>
+        <p class="notes" data-testid="notes">电费和水费按在住天数分，宽带费和垃圾清运费按人头均分，以同时回应小林与阿哲的分歧。所有金额先化为整数分再用最大余数法分配，同余数时按小林、阿哲、小周的固定顺序，确保逐笔与总账一分不差。人员、账单和规则由数据驱动，金额、天数、逐笔规则可改且能新增账单，不必重做页面。</p>
+        <p class="footnote">计算核心公开为 window.__split(totalCents, weights, options)，异常或非正权重按 0 处理；若全部权重为 0，则按申报规则均分。</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const people = [
+        { id: "lin", name: "小林", days: 18 },
+        { id: "zhe", name: "阿哲", days: 30 },
+        { id: "zhou", name: "小周", days: 30 }
+      ];
+
+      const bills = [
+        { id: "electric", name: "电费", amount: "287.65", rule: "days", icon: "⚡", fixed: true },
+        { id: "water", name: "水费", amount: "96.40", rule: "days", icon: "◉", fixed: true },
+        { id: "internet", name: "宽带费", amount: "89.00", rule: "equal", icon: "⌁", fixed: true },
+        { id: "trash", name: "垃圾清运费", amount: "20.00", rule: "equal", icon: "▱", fixed: true }
+      ];
+
+      /**
+       * Deterministic largest-remainder apportionment.
+       * Rest semantics: the first rest value may be an object with
+       * `degenerate: "hold"`; every other value safely uses equal fallback.
+       */
+      window.__split = function split(totalCents, weights, ...rest) {
+        const source = Array.isArray(weights) ? weights : [];
+        const count = source.length;
+        if (count === 0) return [];
+
+        // The public contract supplies integer totals. Keeping a deterministic
+        // fallback here also protects the invariants for accidental bad calls.
+        const total = Number.isInteger(totalCents) ? totalCents : 0;
+        if (!Number.isSafeInteger(total)) {
+          const direct = new Array(count).fill(0);
+          direct[0] = total;
+          return direct;
+        }
+
+        let clean = source.map(value =>
+          Number.isFinite(value) && value > 0 ? Number(value) : 0
+        );
+        let maxWeight = clean.reduce((maximum, value) => Math.max(maximum, value), 0);
+        const option = rest[0];
+
+        if (!(maxWeight > 0)) {
+          if (option && typeof option === "object" && option.degenerate === "hold") {
+            const held = new Array(count).fill(0);
+            held[0] = total;
+            return held;
+          }
+          clean = new Array(count).fill(1);
+          maxWeight = 1;
+        }
+
+        // Normalization prevents a finite but huge weight sum from overflowing.
+        const normalized = clean.map(value => value / maxWeight);
+        const weightSum = normalized.reduce((sum, value) => sum + value, 0);
+        const magnitude = Math.abs(total);
+        const exact = normalized.map(value => magnitude * (value / weightSum));
+        const shares = exact.map(value => Math.floor(value));
+        let assigned = shares.reduce((sum, value) => sum + value, 0);
+        let delta = magnitude - assigned;
+
+        const descendingRemainder = exact
+          .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+          .sort((a, b) => (b.fraction - a.fraction) || (a.index - b.index));
+
+        // In normal arithmetic delta is in [0, count). The quotient path also
+        // makes correction bounded and deterministic under floating-point edge cases.
+        if (delta > 0) {
+          const each = Math.floor(delta / count);
+          if (each > 0) {
+            for (let i = 0; i < count; i += 1) shares[i] += each;
+            delta -= each * count;
+          }
+          for (let i = 0; i < delta; i += 1) {
+            shares[descendingRemainder[i % count].index] += 1;
+          }
+        } else if (delta < 0) {
+          let excess = -delta;
+          const ascendingRemainder = descendingRemainder.slice().reverse();
+          let cursor = 0;
+          while (excess > 0) {
+            const target = ascendingRemainder[cursor % count].index;
+            if (shares[target] > 0) {
+              const rounds = Math.max(1, Math.floor(excess / count));
+              const take = Math.min(shares[target], rounds);
+              shares[target] -= take;
+              excess -= take;
+            }
+            cursor += 1;
+          }
+        }
+
+        return total < 0 ? shares.map(value => -value) : shares;
+      };
+
+      const peopleStrip = document.getElementById("people-strip");
+      const billRows = document.getElementById("bill-rows");
+      const settlementGrid = document.getElementById("settlement-grid");
+      let customCounter = 0;
+
+      function escapeText(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function amountToCents(raw) {
+        const text = String(raw).trim();
+        const match = text.match(/^([+-]?)(\d*)(?:\.(\d*))?$/);
+        if (!match || (!match[2] && !match[3])) return 0;
+        const sign = match[1] === "-" ? -1 : 1;
+        const whole = match[2] || "0";
+        const decimals = match[3] || "";
+        const firstTwo = (decimals + "00").slice(0, 2);
+        let cents = Number(whole) * 100 + Number(firstTwo);
+        if (decimals.length > 2 && Number(decimals[2]) >= 5) cents += 1;
+        if (!Number.isSafeInteger(cents)) return 0;
+        return sign * cents;
+      }
+
+      function formatMoney(cents) {
+        const sign = cents < 0 ? "-" : "";
+        const absolute = Math.abs(cents);
+        return `${sign}¥${Math.floor(absolute / 100)}.${String(absolute % 100).padStart(2, "0")}`;
+      }
+
+      function localDate() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const day = String(now.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      }
+
+      function renderPeople() {
+        peopleStrip.innerHTML = people.map(person => `
+          <div class="person-input-card">
+            <span class="avatar" aria-hidden="true">${escapeText(person.name.slice(-1))}</span>
+            <label for="days-${person.id}">${escapeText(person.name)}<small>在住天数</small></label>
+            <span class="days-control">
+              <input id="days-${person.id}" data-testid="days-input" data-person="${person.id}"
+                type="number" min="0" step="0.5" inputmode="decimal" value="${person.days}" aria-label="${escapeText(person.name)}在住天数">
+              天
+            </span>
+          </div>
+        `).join("");
+
+        settlementGrid.innerHTML = people.map(person => `
+          <div class="settlement-card">
+            <span>${escapeText(person.name)}应付</span>
+            <strong id="settlement-${person.id}">¥0.00</strong>
+          </div>
+        `).join("");
+
+        peopleStrip.addEventListener("input", event => {
+          if (event.target.matches('[data-testid="days-input"]')) calculate();
+        });
+      }
+
+      function renderBills() {
+        billRows.innerHTML = bills.map(bill => `
+          <tr data-row-bill="${bill.id}">
+            <td>
+              <div class="bill-name">
+                <span class="bill-icon" aria-hidden="true">${escapeText(bill.icon)}</span>
+                <span>${escapeText(bill.name)}</span>
+                ${bill.fixed ? "" : `<button class="remove-button" type="button" data-remove-bill="${bill.id}" aria-label="删除${escapeText(bill.name)}">×</button>`}
+              </div>
+            </td>
+            <td>
+              <div class="amount-control">
+                <span>¥</span>
+                <input data-testid="amount-input" data-bill="${bill.id}" type="number" step="0.01"
+                  inputmode="decimal" value="${escapeText(bill.amount)}" aria-label="${escapeText(bill.name)}金额（元）">
+              </div>
+              <select class="rule-select" data-rule-bill="${bill.id}" aria-label="${escapeText(bill.name)}分摊规则">
+                <option value="days" ${bill.rule === "days" ? "selected" : ""}>按在住天数</option>
+                <option value="equal" ${bill.rule === "equal" ? "selected" : ""}>三人均分</option>
+              </select>
+            </td>
+            ${people.map(person => `<td><span class="money" data-testid="cell" data-bill="${bill.id}" data-person="${person.id}" data-cents="0">¥0.00</span></td>`).join("")}
+            <td><span class="money bill-total" data-testid="bill-total" data-bill="${bill.id}" data-cents="0">¥0.00</span></td>
+          </tr>
+        `).join("");
+
+      }
+
+      function handleBillChange(event) {
+        if (event.target.matches('[data-testid="amount-input"]')) {
+          const bill = bills.find(item => item.id === event.target.dataset.bill);
+          if (bill) bill.amount = event.target.value;
+          calculate();
+        } else if (event.target.matches("[data-rule-bill]")) {
+          const bill = bills.find(item => item.id === event.target.dataset.ruleBill);
+          if (bill) bill.rule = event.target.value;
+          calculate();
+        }
+      }
+
+      function setCents(element, cents) {
+        element.dataset.cents = String(cents);
+        element.textContent = formatMoney(cents);
+      }
+
+      function calculate() {
+        const days = people.map(person => {
+          const input = document.querySelector(`[data-testid="days-input"][data-person="${person.id}"]`);
+          const value = Number(input.value);
+          return Number.isFinite(value) && value > 0 ? value : 0;
+        });
+        const equal = people.map(() => 1);
+        const perPerson = people.map(() => 0);
+        let directGrandTotal = 0;
+
+        for (const bill of bills) {
+          const amountInput = document.querySelector(`[data-testid="amount-input"][data-bill="${bill.id}"]`);
+          const ruleInput = document.querySelector(`[data-rule-bill="${bill.id}"]`);
+          const totalCents = amountToCents(amountInput ? amountInput.value : 0);
+          const shares = window.__split(totalCents, ruleInput && ruleInput.value === "days" ? days : equal);
+
+          shares.forEach((share, index) => {
+            perPerson[index] += share;
+            const cell = document.querySelector(`[data-testid="cell"][data-bill="${bill.id}"][data-person="${people[index].id}"]`);
+            setCents(cell, share);
+          });
+
+          // Every data-cents value, including a displayed total, passes through
+          // the same public splitter (a one-slot split is the identity case).
+          const checkedBillTotal = window.__split(shares.reduce((sum, value) => sum + value, 0), [1])[0];
+          setCents(document.querySelector(`[data-testid="bill-total"][data-bill="${bill.id}"]`), checkedBillTotal);
+          directGrandTotal += checkedBillTotal;
+        }
+
+        perPerson.forEach((sum, index) => {
+          const checkedPersonTotal = window.__split(sum, [1])[0];
+          const totalElement = document.querySelector(`[data-testid="person-total"][data-person="${people[index].id}"]`);
+          setCents(totalElement, checkedPersonTotal);
+          document.getElementById(`settlement-${people[index].id}`).textContent = formatMoney(checkedPersonTotal);
+        });
+
+        const grandTotal = window.__split(directGrandTotal, [1])[0];
+        setCents(document.querySelector('[data-testid="grand-total"]'), grandTotal);
+        document.getElementById("table-grand-total").textContent = formatMoney(grandTotal);
+      }
+
+      document.getElementById("add-bill").addEventListener("click", () => {
+        customCounter += 1;
+        bills.push({
+          id: `custom-${customCounter}`,
+          name: `新增账单 ${customCounter}`,
+          amount: "0.00",
+          rule: "equal",
+          icon: "+",
+          fixed: false
+        });
+        renderBills();
+        calculate();
+        const input = document.querySelector(`[data-testid="amount-input"][data-bill="custom-${customCounter}"]`);
+        if (input) input.focus();
+      });
+
+      billRows.addEventListener("input", handleBillChange);
+      billRows.addEventListener("change", handleBillChange);
+      billRows.addEventListener("click", event => {
+        const button = event.target.closest("[data-remove-bill]");
+        if (!button) return;
+        const index = bills.findIndex(bill => bill.id === button.dataset.removeBill);
+        if (index >= 0 && !bills[index].fixed) {
+          bills.splice(index, 1);
+          renderBills();
+          calculate();
+        }
+      });
+
+      document.querySelector('[data-testid="generated-at"]').textContent = localDate();
+      renderPeople();
+      renderBills();
+      calculate();
+    })();
+  </script>
+</body>
+</html>
